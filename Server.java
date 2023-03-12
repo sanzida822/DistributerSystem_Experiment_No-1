@@ -9,12 +9,8 @@ import java.util.concurrent.Executors;
 
 public class Server {
 
-    public static HashMap<String,Socket> clients;
-
     public static void main(String[] args) throws IOException {
-        ServerSocket serverSocket=new ServerSocket(9999);
-
-        clients=new HashMap<>();
+        ServerSocket serverSocket=new ServerSocket(9998);
 
         ExecutorService executorService= Executors.newFixedThreadPool(5);
         while (true){
@@ -22,9 +18,8 @@ public class Server {
 
             DataInputStream in=new DataInputStream(clint.getInputStream());
             String name=in.readUTF();
-            clients.put(name,clint);
 
-            executorService.execute(new ClientThread(name,clint,clients));
+            executorService.execute(new ClientThread(name,clint));
             System.out.println(name+" connected to server...");
         }
     }
@@ -33,12 +28,10 @@ public class Server {
 class ClientThread extends Thread{
     private String name;
     private Socket client;
-    private HashMap<String,Socket> clients;
 
-    public ClientThread(String name, Socket client, HashMap<String, Socket> clients) {
+    public ClientThread(String name, Socket client) {
         this.name = name;
         this.client = client;
-        this.clients = clients;
     }
 
     @Override
@@ -49,17 +42,9 @@ class ClientThread extends Thread{
             DataOutputStream out=new DataOutputStream(client.getOutputStream());
 
             while (true){
-
                 String res=in.readUTF();
                 System.out.println("Server Received: "+res);
-                String[] data=res.split(">>");
-                if(clients.containsKey(data[0])){
-                    new DataOutputStream(clients.get(data[0]).getOutputStream()).writeUTF(name+" sends: "+data[1]);
-                    System.out.println("Message("+data[1]+") sends to "+data[0]+"....");
-                }else{
-                    System.out.println(data[0]+" not found....");
-                }
-
+                out.writeUTF(String.valueOf(res.length()));
             }
 
         }catch (IOException e){
